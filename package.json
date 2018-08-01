@@ -1,8 +1,9 @@
 {
   "name": "react-ix",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,5 +20,12 @@
   "bugs": {
     "url": "https://github.com/wuzekang/react-ix/issues"
   },
-  "homepage": "https://github.com/wuzekang/react-ix#readme"
+  "homepage": "https://github.com/wuzekang/react-ix#readme",
+  "peerDependencies": {
+    "react": "^16.4.1",
+    "rxjs": "^6.2.2"
+  },
+  "devDependencies": {
+    "@types/react": "^16.4.7"
+  }
 }

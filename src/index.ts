@@ -1,6 +1,6 @@
-import React from 'react';
+import { PureComponent, ReactNode, ComponentClass } from 'react';
 
-import { Subject, merge, empty, BehaviorSubject, combineLatest } from 'rxjs';
+import { Subject, merge, empty, BehaviorSubject, combineLatest, Observable, MonoTypeOperatorFunction } from 'rxjs';
 
 import {
   withLatestFrom,
@@ -19,20 +19,42 @@ import {
 
 const filterEq = v => filter(x => x === v);
 
-export const component = (displayName, process) => {
-  class Cycle extends React.PureComponent {
-    static counter = 0;
+export interface IX<P> {
+  debug: <T>(name: string, ...options: any[]) => MonoTypeOperatorFunction<T>
+  event: <T>(name: string) => Subject<T>,
+  lifecycle: Subject<string>,
+  dispatch: <T>(name: string) => (payload: T) => void,
+  connect: <T>(source: Observable<T>) => Observable<T>,
+  handle: <T>(name: string) => (event: T) => void,
+  props: BehaviorSubject<P>,
+}
 
-    id = (Cycle.counter += 1);
+interface S {
+  element: ReactNode
+}
 
-    constructor(props) {
-      super();
+export const component = <P>(displayName: string, fn:(ix: IX<P>) => Observable<ReactNode>) => {
+
+  const Cycle: ComponentClass<P,S> = class Cycle extends PureComponent<P,S> {
+    private static counter = 0;
+    static displayName: string = displayName;
+
+    private events$;
+    private lifecycle;
+    private ix: IX<P>;
+    private element$: BehaviorSubject<ReactNode>;
+
+  
+    private id = (Cycle.counter += 1);
+
+    constructor(props, context) {
+      super(props, context);
 
       this.events$ = {};
 
       this.lifecycle = new Subject();
 
-      const dispatch$ = new Subject();
+      const dispatch$ = new Subject<{type, payload}>();
 
       const mounted$ = merge(
         this.lifecycle.pipe(
@@ -70,15 +92,15 @@ export const component = (displayName, process) => {
         }
       });
 
-      this.props$ = new BehaviorSubject(null);
+      this.element$ = new BehaviorSubject(null);
 
-      process(this.ix).subscribe(this.props$);
+      fn(this.ix).subscribe(this.element$);
 
       this.state = {
-        props: this.props$.value,
+        element: this.element$.value,
       };
 
-      this.ix.connect(this.props$).subscribe(props => this.setState({ props }));
+      this.ix.connect(this.element$).subscribe(element => this.setState({ element }));
     }
 
     componentDidMount() {
@@ -96,25 +118,24 @@ export const component = (displayName, process) => {
     }
 
     render() {
-      return this.state.props;
+      return this.state.element;
     }
   }
-  Cycle.displayName = displayName;
   return Cycle;
 };
 
-export const loading = (params$, loader) => {
+export const loading = <T,R>(params$: Observable<T>, loader: (params:T) => Observable<R>) => {
   const response$ = params$.pipe(
     map(params => loader(params)),
     share()
   );
 
-  return [
-    response$.pipe(
-      switchAll(),
+  return {
+    response$: response$.pipe(
+      switchAll<R>(),
       share()
     ),
-    combineLatest(
+    loading$: combineLatest(
       params$.pipe(map((params, i) => i)),
       response$.pipe(
         mergeMap((o, i) =>
@@ -129,5 +150,5 @@ export const loading = (params$, loader) => {
       map(([start, end]) => end < start),
       startWith(false)
     ),
-  ];
+  };
 };
