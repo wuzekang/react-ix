@@ -13,8 +13,5 @@ interface S {
     element: ReactNode;
 }
 export declare const component: <P>(displayName: string, fn: (ix: IX<P>) => Observable<ReactNode>) => ComponentClass<P, S>;
-export declare const loading: <T, R>(params$: Observable<T>, loader: (params: T) => Observable<R>) => {
-    response$: Observable<R>;
-    loading$: Observable<boolean>;
-};
+export declare const loading: <T, R>(params$: Observable<T>, loader: (params: T) => Observable<R>) => [Observable<R>, Observable<boolean>];
 export {};

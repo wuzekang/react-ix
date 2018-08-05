@@ -124,20 +124,20 @@ export const component = <P>(displayName: string, fn:(ix: IX<P>) => Observable<R
   return Cycle;
 };
 
-export const loading = <T,R>(params$: Observable<T>, loader: (params:T) => Observable<R>) => {
-  const response$ = params$.pipe(
-    map(params => loader(params)),
+export const loading = <T,R>(params$: Observable<T>, loader: (params:T) => Observable<R>) : [Observable<R>, Observable<boolean>] => {
+  const loader$ = params$.pipe(
+    map(params => loader(params).pipe(share())),
     share()
   );
 
-  return {
-    response$: response$.pipe(
+  return [
+    loader$.pipe(
       switchAll<R>(),
-      share()
+      share(),
     ),
-    loading$: combineLatest(
-      params$.pipe(map((params, i) => i)),
-      response$.pipe(
+    combineLatest(
+      loader$.pipe(map((params, i) => i)),
+      loader$.pipe(
         mergeMap((o, i) =>
           o.pipe(
             count(),
@@ -148,7 +148,8 @@ export const loading = <T,R>(params$: Observable<T>, loader: (params:T) => Obser
       )
     ).pipe(
       map(([start, end]) => end < start),
-      startWith(false)
+      startWith(false),
+      share(),
     ),
-  };
+  ];
 };

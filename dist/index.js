@@ -88,15 +88,15 @@ exports.component = function (displayName, fn) {
     return Cycle;
 };
 exports.loading = function (params$, loader) {
-    var response$ = params$.pipe(operators_1.map(function (params) { return loader(params); }), operators_1.share());
-    return {
-        response$: response$.pipe(operators_1.switchAll(), operators_1.share()),
-        loading$: rxjs_1.combineLatest(params$.pipe(operators_1.map(function (params, i) { return i; })), response$.pipe(operators_1.mergeMap(function (o, i) {
+    var loader$ = params$.pipe(operators_1.map(function (params) { return loader(params).pipe(operators_1.share()); }), operators_1.share());
+    return [
+        loader$.pipe(operators_1.switchAll(), operators_1.share()),
+        rxjs_1.combineLatest(loader$.pipe(operators_1.map(function (params, i) { return i; })), loader$.pipe(operators_1.mergeMap(function (o, i) {
             return o.pipe(operators_1.count(), operators_1.mapTo(i));
         }), operators_1.scan(function (acc, value) { return Math.max(acc, value); }, 0))).pipe(operators_1.map(function (_a) {
             var start = _a[0], end = _a[1];
             return end < start;
-        }), operators_1.startWith(false))
-    };
+        }), operators_1.startWith(false), operators_1.share()),
+    ];
 };
 //# sourceMappingURL=index.js.map
