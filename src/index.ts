@@ -33,9 +33,9 @@ interface S {
   element: ReactNode
 }
 
-export const component = <P>(displayName: string, fn:(ix: IX<P>) => Observable<ReactNode>) => {
+export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<ReactNode>) => {
 
-  const Cycle: ComponentClass<P,S> = class Cycle extends PureComponent<P,S> {
+  const Cycle: ComponentClass<P, S> = class Cycle extends PureComponent<P, S> {
     private static counter = 0;
     static displayName: string = displayName;
 
@@ -44,7 +44,7 @@ export const component = <P>(displayName: string, fn:(ix: IX<P>) => Observable<R
     private ix: IX<P>;
     private element$: BehaviorSubject<ReactNode>;
 
-  
+
     private id = (Cycle.counter += 1);
 
     constructor(props, context) {
@@ -54,7 +54,7 @@ export const component = <P>(displayName: string, fn:(ix: IX<P>) => Observable<R
 
       this.lifecycle = new Subject();
 
-      const dispatch$ = new Subject<{type, payload}>();
+      const dispatch$ = new Subject<{ type, payload }>();
 
       const mounted$ = merge(
         this.lifecycle.pipe(
@@ -124,7 +124,7 @@ export const component = <P>(displayName: string, fn:(ix: IX<P>) => Observable<R
   return Cycle;
 };
 
-export const loading = <T,R>(params$: Observable<T>, loader: (params:T) => Observable<R>) : [Observable<R>, Observable<boolean>] => {
+export const loading = <T, R>(params$: Observable<T>, loader: (params: T) => Observable<R>): [Observable<R>, Observable<boolean>] => {
   const loader$ = params$.pipe(
     map(params => loader(params).pipe(share())),
     share()
@@ -136,20 +136,20 @@ export const loading = <T,R>(params$: Observable<T>, loader: (params:T) => Obser
       share(),
     ),
     combineLatest(
-      loader$.pipe(map((params, i) => i)),
+      loader$.pipe(map((_, i) => i + 1)),
       loader$.pipe(
         mergeMap((o, i) =>
           o.pipe(
             count(),
-            mapTo(i)
+            mapTo(i + 1)
           )
         ),
-        scan((acc, value) => Math.max(acc, value), 0)
+        scan((acc, value) => Math.max(acc, value), 0),
+        startWith(0),
       )
     ).pipe(
       map(([start, end]) => end < start),
       startWith(false),
-      share(),
     ),
   ];
 };
