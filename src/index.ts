@@ -20,6 +20,7 @@ import {
 const filterEq = v => filter(x => x === v);
 
 export interface IX<P> {
+  loading: <T, R>(params$: Observable<T>, loader: (params: T) => Observable<R>) => [Observable<R>, Observable<boolean>],
   debug: <T>(name: string, ...options: any[]) => MonoTypeOperatorFunction<T>
   event: <T>(name: string) => Subject<T>,
   lifecycle: Subject<string>,
@@ -34,11 +35,9 @@ interface S {
 }
 
 export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<ReactNode>) => {
-
-  const Cycle: ComponentClass<P, S> = class Cycle extends PureComponent<P, S> {
+  class Cycle extends PureComponent<P, S> {
+    public static displayName: string = displayName;
     private static counter = 0;
-    static displayName: string = displayName;
-
     private events$;
     private lifecycle;
     private ix: IX<P>;
@@ -67,13 +66,42 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
         )
       ).pipe(startWith(false));
 
-      this.ix = {
+      const ix: IX<P> = {
+        loading: <T,R>(params$: Observable<T>, loader: (params: T) => Observable<R>) =>
+          loading<T,R>(params$, loader)
+            .map(ix.connect) as [Observable<R>, Observable<boolean>],
         debug: (name, ...options) => o =>
-          o.pipe(
-            /* eslint-disable-next-line no-console */
-            tap(v => console.log(`${displayName}#${this.id} ${name}`, ...options, v)),
-            share()
+        o.pipe(
+          tap(
+            value =>
+              /* eslint-disable-next-line no-console */
+              console.log(
+                '%c(next)',
+                'color:blue',
+                `${displayName}#${this.id} ${name}`,
+                value,
+                ...options
+              ),
+            error =>
+              /* eslint-disable-next-line no-console */
+              console.log(
+                '%c(error)',
+                'color:red',
+                `${displayName}#${this.id} ${name}`,
+                error,
+                ...options
+              ),
+            () =>
+              /* eslint-disable-next-line no-console */
+              console.log(
+                '%c(complete)',
+                'color:green',
+                `${displayName}#${this.id} ${name}`,
+                ...options
+              )
           ),
+          share()
+        ),
         event: name => {
           const event$ = this.events$[name] || new Subject();
           this.events$[name] = event$;
@@ -85,6 +113,8 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
         dispatch: (type = 'dispatch') => payload => dispatch$.next({ type, payload }),
         handle: name => event => this.ix.event(name).next(event),
       };
+
+      this.ix = ix;
 
       dispatch$.pipe(withLatestFrom(this.ix.props)).subscribe(([{ type, payload }, props]) => {
         if (typeof props[type] === 'function') {
@@ -121,10 +151,11 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
       return this.state.element;
     }
   }
-  return Cycle;
+  
+  return Cycle as ComponentClass<P,S>;
 };
 
-export const loading = <T, R>(params$: Observable<T>, loader: (params: T) => Observable<R>): [Observable<R>, Observable<boolean>] => {
+const loading = <T, R>(params$: Observable<T>, loader: (params: T) => Observable<R>): [Observable<R>, Observable<boolean>] => {
   const loader$ = params$.pipe(
     map(params => loader(params).pipe(share())),
     share()
@@ -133,23 +164,22 @@ export const loading = <T, R>(params$: Observable<T>, loader: (params: T) => Obs
   return [
     loader$.pipe(
       switchAll<R>(),
-      share(),
+      share()
     ),
     combineLatest(
       loader$.pipe(map((_, i) => i + 1)),
       loader$.pipe(
-        mergeMap((o, i) =>
+        switchMap((o, i) =>
           o.pipe(
             count(),
             mapTo(i + 1)
           )
         ),
-        scan((acc, value) => Math.max(acc, value), 0),
-        startWith(0),
+        startWith(0)
       )
     ).pipe(
       map(([start, end]) => end < start),
-      startWith(false),
+      startWith(false)
     ),
   ];
 };
