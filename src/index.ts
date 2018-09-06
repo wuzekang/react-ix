@@ -1,2 +1,2 @@
 export { component } from './component';
-export { Context } from './context';
+export { context } from './context';

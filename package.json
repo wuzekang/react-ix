@@ -6,7 +6,7 @@
   "typings": "./dist/index.d.ts",
   "scripts": {
     "start": "tsc -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -23,11 +23,15 @@
   },
   "homepage": "https://github.com/wuzekang/react-ix#readme",
   "peerDependencies": {
-    "react": "^16.4.1",
-    "rxjs": "^6.2.2"
+    "react": "^16.0.0",
+    "rxjs": "^6.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^23.3.1",
     "@types/react": "^16.4.7",
-    "typescript": "^3.0.1"
+    "jest": "^23.5.0",
+    "rxjs-marbles": "^4.3.1",
+    "ts-jest": "^23.1.4",
+    "typescript": "^3.0.3"
   }
 }

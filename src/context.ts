@@ -9,9 +9,9 @@ class ProvideSubscriber<T> extends Subscriber<T> {
     }
 }
 
-export class Context<T> {
+class Context<T> {
     private _value = new ValueSubject<T>();
-    
+
     constructor(...values: T[]) {
         merge(NEVER, of(...values)).subscribe(this._value);
     }
@@ -25,4 +25,8 @@ export class Context<T> {
         merge(NEVER, of(...values)).subscribe(this._value);
         return new ProvideSubscriber(this._value);
     }
+}
+
+export function context<T>(value: T): Context<T> {
+    return new Context<T>(value);
 }
