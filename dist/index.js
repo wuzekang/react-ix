@@ -67,21 +67,21 @@ exports.component = function (displayName, fn) {
                     if (type === void 0) { type = 'dispatch'; }
                     return function (payload) { return dispatch$.next({ type: type, payload: payload }); };
                 },
-                handle: function (name) { return function (event) { return _this.ix.event(name).next(event); }; }
+                handle: function (name) { return function (event) { return ix.event(name).next(event); }; }
             };
-            _this.ix = ix;
-            dispatch$.pipe(operators_1.withLatestFrom(_this.ix.props)).subscribe(function (_a) {
+            dispatch$.pipe(operators_1.withLatestFrom(ix.props)).subscribe(function (_a) {
                 var _b = _a[0], type = _b.type, payload = _b.payload, props = _a[1];
                 if (typeof props[type] === 'function') {
                     props[type](payload);
                 }
             });
             _this.element$ = new rxjs_1.BehaviorSubject(null);
-            fn(_this.ix).subscribe(_this.element$);
+            fn(ix).subscribe(_this.element$);
             _this.state = {
                 element: _this.element$.value
             };
-            _this.ix.connect(_this.element$).subscribe(function (element) { return _this.setState({ element: element }); });
+            ix.connect(_this.element$).subscribe(function (element) { return _this.setState({ element: element }); });
+            _this.ix = ix;
             return _this;
         }
         Cycle.prototype.componentDidMount = function () {
