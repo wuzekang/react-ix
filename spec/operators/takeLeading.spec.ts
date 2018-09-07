@@ -1,13 +1,13 @@
 
 import { map } from 'rxjs/operators';
 import { TestScheduler } from 'rxjs/testing';
-import { takeLatest } from '../../src/operators/takeLatest';
+import { takeLeading } from '../../src/operators/takeLeading';
 
 const scheduler = new TestScheduler((actual, expected) => {
   expect(expected).toEqual(actual)
 });
 
-it('takeLatest correctly', () => {
+it('takeLeading correctly', () => {
   scheduler.run(({ cold, expectObservable, expectSubscriptions }) => {
     const e1 = cold(
         '-a--b--c-----|'
@@ -21,18 +21,17 @@ it('takeLatest correctly', () => {
     );
 
     const e2subs = [
-        '-^--!',
-        '----^--!',
+        '-^---!',
         '-------^---!'
     ]
 
     
     const expected = [
-        '----------a--|',
-        'ft---------f-|',
+        '----a-----a--|',
+        'ft---f-t---f-|',
     ];
 
-    const result = takeLatest(() => e2)(e1)
+    const result = takeLeading(() => e2)(e1)
 
     expectObservable(result[0]).toBe(expected[0]);
     expectObservable(result[1].pipe(map(value => value ? 't' : 'f'))).toBe(expected[1]);

@@ -1,5 +1,5 @@
 import { combineLatest, Observable } from 'rxjs';
-import { count, map, mapTo, share, startWith, switchAll, switchMap, takeUntil } from 'rxjs/operators';
+import { count, distinctUntilChanged, map, mapTo, share, startWith, switchAll, switchMap, takeUntil } from 'rxjs/operators';
 import { UnaryFunction } from 'rxjs/internal/types';
 
 interface ProjectFunction<T, R> extends UnaryFunction<T, Observable<R>> {
@@ -35,6 +35,7 @@ export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Obs
         ).pipe(
             map(([start, end]) => end < start),
             startWith(false),
+            distinctUntilChanged(),
             takeUntil(completed),
         ),
     ];

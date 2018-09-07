@@ -1,7 +1,8 @@
 import { combineLatest, Observable, Subject } from 'rxjs';
-import { count, map, mapTo, share, startWith, switchAll, switchMap, takeUntil, withLatestFrom, filter } from 'rxjs/operators';
+import { count, distinctUntilChanged, map, mapTo, share, startWith, switchAll, switchMap, takeUntil, withLatestFrom, filter } from 'rxjs/operators';
 
-export const takeLeading = <T, R>(project: (value: T) => Observable<R>) => (observer: Observable<T>) : [Observable<R>, Observable<boolean>] => {
+export const takeLeading = <T, R>(project: (value: T) => Observable<R>) => (source: Observable<T>) : [Observable<R>, Observable<boolean>] => {
+    const observer = source.pipe(share());
     const completed = observer.pipe(count());
     const leading = new Subject<T>()
 
@@ -24,6 +25,7 @@ export const takeLeading = <T, R>(project: (value: T) => Observable<R>) => (obse
     ).pipe(
         map(([start, end]) => end < start),
         startWith(false),
+        distinctUntilChanged(),
         takeUntil(completed),
     );
 
