@@ -8,8 +8,6 @@ interface ProjectFunction<T, R> extends UnaryFunction<T, Observable<R>> {
 export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Observable<T>): [Observable<R>, Observable<boolean>] => {
     const observer = source.pipe(share());
     
-    const completed = observer.pipe(count());
-
     const result = observer.pipe(
         map(value => project(value).pipe(share())),
         share(),
@@ -18,7 +16,6 @@ export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Obs
     return [
         result.pipe(
             switchAll<R>(),
-            takeUntil(completed),
             share(),
         ),
         combineLatest(
@@ -36,7 +33,6 @@ export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Obs
             map(([start, end]) => end < start),
             startWith(false),
             distinctUntilChanged(),
-            takeUntil(completed),
         ),
     ];
 }
