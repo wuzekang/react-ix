@@ -1,6 +1,6 @@
 import { PureComponent, ReactNode, ComponentClass } from 'react';
 
-import { Subject, merge, NEVER, BehaviorSubject, Observable, MonoTypeOperatorFunction } from 'rxjs';
+import { Subject, merge, NEVER, EMPTY, BehaviorSubject, Observable, MonoTypeOperatorFunction } from 'rxjs';
 
 import {
   withLatestFrom,
@@ -8,6 +8,7 @@ import {
   tap,
   count,
   takeUntil,
+  switchMap,
 } from 'rxjs/operators';
 
 export interface IX<P> {
@@ -28,19 +29,16 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
   class Cycle extends PureComponent<P, S> {
     public static displayName: string = displayName;
     private static counter = 0;
-    private events$;
-    private lifecycle;
+    private events$ = {};
+    private lifecycle = new Subject<string>();
     private ix: IX<P>;
-    private element$: BehaviorSubject<ReactNode>;
+    private element$ = new BehaviorSubject<ReactNode>(null);
+    private mounted$ = new BehaviorSubject<boolean>(false);
 
     private id = (Cycle.counter += 1);
 
     constructor(props, context) {
       super(props, context);
-
-      this.events$ = {};
-
-      this.lifecycle = new Subject();
 
       const dispatch$ = new Subject<{ type, payload }>();
 
@@ -109,13 +107,14 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
         element: this.element$.value,
       };
 
-      ix.connect(this.element$).subscribe(element => this.setState({ element }));
+      this.mounted$.pipe(switchMap(mounted => mounted ? this.element$ : EMPTY)).subscribe(element => this.setState({ element }));
 
       this.ix = ix;
     }
 
     componentDidMount() {
       this.lifecycle.next('didMount');
+      this.mounted$.next(true);
     }
 
     componentWillReceiveProps(props) {
@@ -125,7 +124,9 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
 
     componentWillUnmount() {
       this.lifecycle.next('willUnmount');
+      this.mounted$.next(false);
       this.lifecycle.complete();
+      this.mounted$.complete();
     }
 
     render() {

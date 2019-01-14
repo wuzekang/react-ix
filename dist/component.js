@@ -5,7 +5,7 @@ var __extends = (this && this.__extends) || (function () {
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
             function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
         return extendStatics(d, b);
-    }
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -21,9 +21,11 @@ exports.component = function (displayName, fn) {
         __extends(Cycle, _super);
         function Cycle(props, context) {
             var _this = _super.call(this, props, context) || this;
-            _this.id = (Cycle.counter += 1);
             _this.events$ = {};
             _this.lifecycle = new rxjs_1.Subject();
+            _this.element$ = new rxjs_1.BehaviorSubject(null);
+            _this.mounted$ = new rxjs_1.BehaviorSubject(false);
+            _this.id = (Cycle.counter += 1);
             var dispatch$ = new rxjs_1.Subject();
             var completed$ = _this.lifecycle.pipe(operators_1.count());
             var ix = {
@@ -79,12 +81,13 @@ exports.component = function (displayName, fn) {
             _this.state = {
                 element: _this.element$.value
             };
-            ix.connect(_this.element$).subscribe(function (element) { return _this.setState({ element: element }); });
+            _this.mounted$.pipe(operators_1.switchMap(function (mounted) { return mounted ? _this.element$ : rxjs_1.EMPTY; })).subscribe(function (element) { return _this.setState({ element: element }); });
             _this.ix = ix;
             return _this;
         }
         Cycle.prototype.componentDidMount = function () {
             this.lifecycle.next('didMount');
+            this.mounted$.next(true);
         };
         Cycle.prototype.componentWillReceiveProps = function (props) {
             this.lifecycle.next('willReceiveProps');
@@ -92,7 +95,9 @@ exports.component = function (displayName, fn) {
         };
         Cycle.prototype.componentWillUnmount = function () {
             this.lifecycle.next('willUnmount');
+            this.mounted$.next(false);
             this.lifecycle.complete();
+            this.mounted$.complete();
         };
         Cycle.prototype.render = function () {
             return this.state.element;
