@@ -16,6 +16,7 @@ exports.__esModule = true;
 var react_1 = require("react");
 var rxjs_1 = require("rxjs");
 var operators_1 = require("rxjs/operators");
+var filterEq = function (v) { return operators_1.filter(function (x) { return x === v; }); };
 exports.component = function (displayName, fn) {
     var Cycle = (function (_super) {
         __extends(Cycle, _super);
@@ -24,10 +25,11 @@ exports.component = function (displayName, fn) {
             _this.events$ = {};
             _this.lifecycle = new rxjs_1.Subject();
             _this.element$ = new rxjs_1.BehaviorSubject(null);
-            _this.mounted$ = new rxjs_1.BehaviorSubject(false);
             _this.id = (Cycle.counter += 1);
             var dispatch$ = new rxjs_1.Subject();
             var completed$ = _this.lifecycle.pipe(operators_1.count());
+            var mounted$ = rxjs_1.merge(_this.lifecycle.pipe(filterEq('didMount'), operators_1.mapTo(true)), _this.lifecycle.pipe(filterEq('willUnmount'), operators_1.mapTo(false))).pipe(operators_1.publishBehavior(false));
+            mounted$.connect();
             var ix = {
                 debug: function (name) {
                     var options = [];
@@ -76,18 +78,16 @@ exports.component = function (displayName, fn) {
                     props[type](payload);
                 }
             });
-            _this.element$ = new rxjs_1.BehaviorSubject(null);
             fn(ix).subscribe(_this.element$);
             _this.state = {
                 element: _this.element$.value
             };
-            _this.mounted$.pipe(operators_1.switchMap(function (mounted) { return mounted ? _this.element$ : rxjs_1.EMPTY; })).subscribe(function (element) { return _this.setState({ element: element }); });
+            mounted$.pipe(operators_1.switchMap(function (mounted) { return mounted ? _this.element$ : rxjs_1.EMPTY; })).subscribe(function (element) { return _this.setState({ element: element }); });
             _this.ix = ix;
             return _this;
         }
         Cycle.prototype.componentDidMount = function () {
             this.lifecycle.next('didMount');
-            this.mounted$.next(true);
         };
         Cycle.prototype.componentWillReceiveProps = function (props) {
             this.lifecycle.next('willReceiveProps');
@@ -95,9 +95,7 @@ exports.component = function (displayName, fn) {
         };
         Cycle.prototype.componentWillUnmount = function () {
             this.lifecycle.next('willUnmount');
-            this.mounted$.next(false);
             this.lifecycle.complete();
-            this.mounted$.complete();
         };
         Cycle.prototype.render = function () {
             return this.state.element;

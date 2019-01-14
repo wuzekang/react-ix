@@ -1,6 +1,6 @@
 import { PureComponent, ReactNode, ComponentClass } from 'react';
 
-import { Subject, merge, NEVER, EMPTY, BehaviorSubject, Observable, MonoTypeOperatorFunction } from 'rxjs';
+import { Subject, merge, NEVER, EMPTY, BehaviorSubject, Observable, MonoTypeOperatorFunction, ConnectableObservable } from 'rxjs';
 
 import {
   withLatestFrom,
@@ -9,6 +9,9 @@ import {
   count,
   takeUntil,
   switchMap,
+  filter,
+  mapTo,
+  publishBehavior,
 } from 'rxjs/operators';
 
 export interface IX<P> {
@@ -25,6 +28,8 @@ interface S {
   element: ReactNode
 }
 
+const filterEq = v => filter(x => x === v);
+
 export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<ReactNode>) => {
   class Cycle extends PureComponent<P, S> {
     public static displayName: string = displayName;
@@ -33,7 +38,6 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
     private lifecycle = new Subject<string>();
     private ix: IX<P>;
     private element$ = new BehaviorSubject<ReactNode>(null);
-    private mounted$ = new BehaviorSubject<boolean>(false);
 
     private id = (Cycle.counter += 1);
 
@@ -43,6 +47,19 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
       const dispatch$ = new Subject<{ type, payload }>();
 
       const completed$ = this.lifecycle.pipe(count());
+
+      const mounted$ = merge(
+        this.lifecycle.pipe(
+          filterEq('didMount'),
+          mapTo(true)
+        ),
+        this.lifecycle.pipe(
+          filterEq('willUnmount'),
+          mapTo(false)
+        )
+      ).pipe(publishBehavior(false)) as ConnectableObservable<boolean>;
+
+      mounted$.connect();
 
       const ix: IX<P> = {
         debug: (name, ...options) => o =>
@@ -99,22 +116,19 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
         }
       });
 
-      this.element$ = new BehaviorSubject(null);
-
       fn(ix).subscribe(this.element$);
 
       this.state = {
         element: this.element$.value,
       };
 
-      this.mounted$.pipe(switchMap(mounted => mounted ? this.element$ : EMPTY)).subscribe(element => this.setState({ element }));
+      mounted$.pipe(switchMap(mounted => mounted ? this.element$ : EMPTY)).subscribe(element => this.setState({ element }));
 
       this.ix = ix;
     }
 
     componentDidMount() {
       this.lifecycle.next('didMount');
-      this.mounted$.next(true);
     }
 
     componentWillReceiveProps(props) {
@@ -124,9 +138,7 @@ export const component = <P>(displayName: string, fn: (ix: IX<P>) => Observable<
 
     componentWillUnmount() {
       this.lifecycle.next('willUnmount');
-      this.mounted$.next(false);
       this.lifecycle.complete();
-      this.mounted$.complete();
     }
 
     render() {
