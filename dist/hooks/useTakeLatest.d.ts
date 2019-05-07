@@ -1,1 +1,1 @@
-export declare const useTakeLatest: <T, R>() => (project: import("rxjs").UnaryFunction<T, import("rxjs").Observable<R>>, initialSource: T, initialResult?: import("../types").Optional<R>) => [(source: T) => import("rxjs").Subject<R>, import("../types").Optional<R>, boolean];
+export declare const useTakeLatest: <T, R>(project: import("rxjs").UnaryFunction<{}, import("rxjs").Observable<R>>, initialSource: {}, initialResult?: import("../types").Optional<R>) => [(source: {}) => import("rxjs").Subject<R>, import("../types").Optional<R>, boolean];
