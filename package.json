@@ -1,11 +1,11 @@
 {
   "name": "react-ix",
-  "version": "1.2.7",
+  "version": "2.0.0",
   "description": "",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "scripts": {
-    "start": "tsc -w",
+    "start": "tsc -w --strictNullChecks",
     "test": "jest"
   },
   "repository": {
@@ -29,9 +29,16 @@
   "devDependencies": {
     "@types/jest": "^23.3.1",
     "@types/react": "^16.4.7",
+    "@typescript-eslint/eslint-plugin": "^1.7.0",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.16.0",
+    "eslint-config-typescript": "^2.0.0",
     "jest": "^23.5.0",
     "rxjs-marbles": "^4.3.1",
     "ts-jest": "^23.1.4",
-    "typescript": "^3.0.3"
+    "typescript": "^3.0.1"
+  },
+  "dependencies": {
+    "rxjs-hooks": "^0.4.3"
   }
 }

@@ -1,9 +1,9 @@
 import { combineLatest, Observable, Subject } from 'rxjs';
-import { count, distinctUntilChanged, map, mapTo, share, startWith, switchAll, switchMap, takeUntil, withLatestFrom, filter } from 'rxjs/operators';
+import { count, distinctUntilChanged, map, mapTo, share, startWith, switchAll, switchMap, withLatestFrom, filter } from 'rxjs/operators';
+import { ProjectFunction, TakeResult } from '../types';
 
-export const takeLeading = <T, R>(project: (value: T) => Observable<R>) => (source: Observable<T>) : [Observable<R>, Observable<boolean>] => {
+export const takeLeading = <T, R>(project: ProjectFunction<T, R>) => (source: Observable<T>): TakeResult<R> => {
     const observer = source.pipe(share());
-    const completed = observer.pipe(count());
     const leading = new Subject<T>()
 
     const result = leading.pipe(
@@ -26,7 +26,6 @@ export const takeLeading = <T, R>(project: (value: T) => Observable<R>) => (sour
         map(([start, end]) => end < start),
         startWith(false),
         distinctUntilChanged(),
-        takeUntil(completed),
     );
 
     observer.pipe(
@@ -35,12 +34,11 @@ export const takeLeading = <T, R>(project: (value: T) => Observable<R>) => (sour
         map(([value]) => value),
     ).subscribe(leading);
 
-    return [
+    return combineLatest(
         result.pipe(
             switchAll<R>(),
-            takeUntil(completed),
             share(),
         ),
-        loading,
-    ];
+        loading
+    );
 }

@@ -1,11 +1,12 @@
 {
     "compilerOptions": {
       "outDir": "./dist",
-      "module": "commonjs",
+      "lib": ["es2015"],
       "sourceMap": true,
       "declaration": true,
-      "noImplicitAny": false,
+      "noImplicitAny": true,
       "removeComments": true,
+      "strictNullChecks": true
     },
     "include": [
       "./src/**/*"
@@ -13,4 +14,4 @@
     "exclude": [
       "node_modules"
     ]
-  }
+}

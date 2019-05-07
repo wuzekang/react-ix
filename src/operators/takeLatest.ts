@@ -1,19 +1,16 @@
 import { combineLatest, Observable } from 'rxjs';
-import { count, distinctUntilChanged, map, mapTo, share, startWith, switchAll, switchMap, takeUntil } from 'rxjs/operators';
-import { UnaryFunction } from 'rxjs/internal/types';
+import { count, distinctUntilChanged, map, mapTo, share, startWith, switchAll, switchMap } from 'rxjs/operators';
+import { ProjectFunction, TakeResult } from '../types';
 
-interface ProjectFunction<T, R> extends UnaryFunction<T, Observable<R>> {
-}
-
-export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Observable<T>): [Observable<R>, Observable<boolean>] => {
+export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Observable<T>): TakeResult<R> => {
     const observer = source.pipe(share());
-    
+
     const result = observer.pipe(
         map(value => project(value).pipe(share())),
         share(),
     );
-    
-    return [
+
+    return combineLatest(
         result.pipe(
             switchAll<R>(),
             share(),
@@ -33,6 +30,6 @@ export const takeLatest = <T, R>(project: ProjectFunction<T, R>) => (source: Obs
             map(([start, end]) => end < start),
             startWith(false),
             distinctUntilChanged(),
-        ),
-    ];
-}
+        )
+    );
+};

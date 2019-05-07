@@ -1,19 +1,18 @@
-import { merge, Observable } from 'rxjs';
-import { count, distinctUntilChanged, map, mapTo, mergeAll, share, scan, startWith, takeUntil } from 'rxjs/operators';
+import { merge, Observable, combineLatest } from 'rxjs';
+import { count, distinctUntilChanged, map, mapTo, mergeAll, share, scan, startWith } from 'rxjs/operators';
+import { ProjectFunction, TakeResult } from '../types';
 
-export const takeEvery = <T, R>(project: (value: T) => Observable<R>, concurrent?: number) => (source: Observable<T>): [Observable<R>, Observable<boolean>] => {
+export const takeEvery = <T, R>(project: ProjectFunction<T, R>, concurrent?: number) => (source: Observable<T>): TakeResult<R> => {
     const observer = source.pipe(share());
-    const completed = observer.pipe(count());
 
     const result = observer.pipe(
         map(value => project(value).pipe(share())),
         share(),
-    );
+    );   
     
-    return [
+    return combineLatest(
         result.pipe(
             mergeAll<R>(concurrent),
-            takeUntil(completed),
             share(),
         ),
         merge(
@@ -27,7 +26,6 @@ export const takeEvery = <T, R>(project: (value: T) => Observable<R>, concurrent
             startWith(0),
             map(value => value > 0),
             distinctUntilChanged(),
-            takeUntil(completed),
         )
-    ];
+    );
 }
