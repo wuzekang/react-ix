@@ -1,1 +1,2 @@
-export declare const useTakeEvery: <T, R>(project: import("rxjs").UnaryFunction<{}, import("rxjs").Observable<R>>, initialSource: {}, initialResult?: import("../types").Optional<R>) => [(source: {}) => import("rxjs").Subject<R>, import("../types").Optional<R>, boolean];
+import { ProjectFunction } from '../types';
+export declare function useTakeEvery<T, R>(project: ProjectFunction<T, R>, concurrent?: number): (initialSource: T, initialResult?: import("../types").Optional<R>) => [import("../types").Optional<R>, (source: T) => import("rxjs").Subject<R>, boolean];

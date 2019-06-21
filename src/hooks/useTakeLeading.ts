@@ -1,4 +1,7 @@
-import { useTakeWith } from '../useTakeWith';
+import { ProjectFunction } from '../types';
 import { takeLeading } from '../operators/takeLeading';
+import { useTakeWith } from '../useTakeWith';
 
-export const useTakeLeading = useTakeWith(takeLeading);
+export function useTakeLeading<T, R>(project: ProjectFunction<T, R>) {
+    return useTakeWith<T, R>(takeLeading)(project);
+}

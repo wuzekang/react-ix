@@ -2,8 +2,8 @@
   "name": "react-ix",
   "version": "2.0.3",
   "description": "",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "./index.js",
+  "typings": "./index.d.ts",
   "scripts": {
     "start": "tsc -w --strictNullChecks",
     "test": "jest"
