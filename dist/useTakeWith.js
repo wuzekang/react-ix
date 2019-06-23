@@ -24,11 +24,15 @@ exports.useTakeWith = function (strategy) {
                     ? project(source)
                         .pipe(operators_1.tap(notifier))
                     : project(source);
-            })); }, [initialResult, initialSource !== undefined], source), result = _b[0], taking = _b[1];
+            }), operators_1.map(function (_a) {
+                var result = _a[0], taking = _a[1];
+                return [result, taking, undefined];
+            }), operators_1.catchError(function (error) { return rxjs_1.of([undefined, false, error]); })); }, [initialResult, initialSource !== undefined, undefined], source), result = _b[0], taking = _b[1], error = _b[2];
             return [
                 result,
                 invoke,
                 taking,
+                error,
             ];
         };
     };
